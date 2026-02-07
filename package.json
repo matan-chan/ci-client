@@ -1,0 +1,28 @@
+{
+  "name": "nginx-analyze-ci-client",
+  "version": "0.1.0",
+  "description": "CI client: discover nginx configs and send to analysis server",
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "nginx-analyze-ci": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "build": "tsup src/index.ts --format esm --target node18",
+    "build:binary": "bun build ./src/index.ts --compile --outfile nginx-analyze-ci"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "glob": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.8",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
