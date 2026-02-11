@@ -3,6 +3,7 @@ import { FORMAT_JSON, EXIT_SUCCESS, EXIT_LICENSE_ERROR } from "./constants";
 import { displayIssues, displaySummary } from "./output";
 import { handleCiExitCode } from "./exitHandlers";
 import { handleCiError } from "./errorHandlers";
+import { extractSslFiles, type SslFileInfo } from "./sslFileDetector";
 import { Command } from "commander";
 import { resolve } from "path";
 import { readFileSync } from "fs";
@@ -46,17 +47,23 @@ function relativePath(base: string, full: string): string {
   return rel || (fullParts[fullParts.length - 1] ?? "");
 }
 
-const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles: string[] }[]; files: Record<string, string> } => {
+const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles: string[] }[]; files: Record<string, string>; sslFiles: SslFileInfo[] } => {
   const files: Record<string, string> = {};
+  const allAbsolutePaths: string[] = [];
+  
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
       if (!files[rel]) files[rel] = readFileSync(absPath, "utf-8");
+      allAbsolutePaths.push(absPath);
       return rel;
     });
     return { allFiles };
   });
-  return { trees: treesPayload, files };
+  
+  const sslFiles = extractSslFiles(allAbsolutePaths, baseDir);
+  
+  return { trees: treesPayload, files, sslFiles };
 };
 
 async function handleCiClientCommand(directory: string, options: Record<string, unknown>): Promise<void> {
@@ -92,12 +99,15 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   }
 
   const baseDir = resolve(directory);
-  const { trees, files } = buildPayload(configTrees, baseDir);
+  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir);
 
-  if (options.verbose) console.log(chalk.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));
+  if (options.verbose) {
+    console.log(chalk.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));
+    if (sslFiles.length > 0) console.log(chalk.gray(`Found ${sslFiles.length} SSL certificate reference(s)`));
+  }
 
   const environment = getEnvironment(options);
-  const body = JSON.stringify({ key, strict: Boolean(options.strict), trees, files, environment });
+  const body = JSON.stringify({ key, strict: Boolean(options.strict), trees, files, sslFiles, environment });
   let response: Response;
 
   try {

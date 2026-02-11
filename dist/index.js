@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // src/constants.ts
 var FORMAT_JSON = "json";
 var EXIT_SUCCESS = 0;
@@ -465,10 +463,92 @@ var handleCiError = (error) => {
   process.exit(EXIT_FAILURE);
 };
 
+// src/sslFileDetector.ts
+import { existsSync as existsSync3, statSync as statSync2, readFileSync as readFileSync2 } from "fs";
+import { dirname as dirname2, resolve as resolve3, relative } from "path";
+var SSL_DIRECTIVES = ["ssl_certificate", "ssl_certificate_key"];
+var resolvePath = (filePath, baseFile) => {
+  try {
+    const baseDir = dirname2(resolve3(baseFile));
+    return resolve3(baseDir, filePath);
+  } catch {
+    return null;
+  }
+};
+var fileExists = (filePath, baseFile) => {
+  const absolutePath = resolvePath(filePath, baseFile);
+  if (!absolutePath) return false;
+  try {
+    return existsSync3(absolutePath) && statSync2(absolutePath).isFile();
+  } catch {
+    return false;
+  }
+};
+var extractSslDirectivesFromNode = (node, configFile, results) => {
+  if (node.type === "directive" && SSL_DIRECTIVES.includes(node.name)) {
+    const directive = node.name;
+    const sslFilePath = node.args[0];
+    if (sslFilePath) {
+      const absolutePath = resolvePath(sslFilePath, configFile);
+      const exists = fileExists(sslFilePath, configFile);
+      results.push({
+        path: sslFilePath,
+        exists,
+        directive,
+        referencedIn: configFile
+      });
+    }
+  }
+  if (node.type === "block") {
+    for (const child of node.children) {
+      extractSslDirectivesFromNode(child, configFile, results);
+    }
+  }
+};
+var parseConfigFile = (absolutePath) => {
+  try {
+    const content = readFileSync2(absolutePath, "utf-8");
+    const tokens = tokenize(content);
+    const parser = new Parser(tokens);
+    return parser.parse();
+  } catch {
+    return null;
+  }
+};
+var extractSslFiles = (configFiles, baseDir) => {
+  const results = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const absoluteConfigPath of configFiles) {
+    const ast = parseConfigFile(absoluteConfigPath);
+    if (!ast) continue;
+    const relativePath2 = relative(baseDir, absoluteConfigPath);
+    const tempResults = [];
+    for (const node of ast.children) {
+      extractSslDirectivesFromNode(node, absoluteConfigPath, tempResults);
+    }
+    for (const sslFile of tempResults) {
+      const absoluteSslPath = resolvePath(sslFile.path, absoluteConfigPath);
+      if (!absoluteSslPath) continue;
+      const relativeSslPath = relative(baseDir, absoluteSslPath);
+      const key = `${relativeSslPath}:${sslFile.directive}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        results.push({
+          path: relativeSslPath,
+          exists: sslFile.exists,
+          directive: sslFile.directive,
+          referencedIn: relativePath2
+        });
+      }
+    }
+  }
+  return results;
+};
+
 // src/index.ts
 import { Command } from "commander";
-import { resolve as resolve3 } from "path";
-import { readFileSync as readFileSync2 } from "fs";
+import { resolve as resolve4 } from "path";
+import { readFileSync as readFileSync3 } from "fs";
 import chalk5 from "chalk";
 var program = new Command();
 program.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
@@ -482,7 +562,7 @@ program.argument("[directory]", "Directory to search for nginx configs", ".").op
 program.parse();
 var getKey = (options) => options.key ?? process.env.NGINX_ANALYZE_TOKEN ?? null;
 var getEnvironment = (options) => options.environment ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
-var toRelativePath = (baseDir, absolutePath) => relativePath(resolve3(baseDir), resolve3(absolutePath));
+var toRelativePath = (baseDir, absolutePath) => relativePath(resolve4(baseDir), resolve4(absolutePath));
 function relativePath(base, full) {
   const baseParts = base.split(/[/\\]/).filter(Boolean);
   const fullParts = full.split(/[/\\]/).filter(Boolean);
@@ -493,15 +573,18 @@ function relativePath(base, full) {
 }
 var buildPayload = (trees, baseDir) => {
   const files = {};
+  const allAbsolutePaths = [];
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
-      if (!files[rel]) files[rel] = readFileSync2(absPath, "utf-8");
+      if (!files[rel]) files[rel] = readFileSync3(absPath, "utf-8");
+      allAbsolutePaths.push(absPath);
       return rel;
     });
     return { allFiles };
   });
-  return { trees: treesPayload, files };
+  const sslFiles = extractSslFiles(allAbsolutePaths, baseDir);
+  return { trees: treesPayload, files, sslFiles };
 };
 async function handleCiClientCommand(directory, options) {
   const serverUrl = "https://test.gremlingraph.com/analyze";
@@ -529,11 +612,14 @@ Found ${totalFiles} file(s) in ${configTrees.length} tree(s)`));
       console.log(chalk5.cyan(`  Tree ${i + 1}: ${tree.allFiles.length} file(s)`));
     });
   }
-  const baseDir = resolve3(directory);
-  const { trees, files } = buildPayload(configTrees, baseDir);
-  if (options.verbose) console.log(chalk5.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));
+  const baseDir = resolve4(directory);
+  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir);
+  if (options.verbose) {
+    console.log(chalk5.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));
+    if (sslFiles.length > 0) console.log(chalk5.gray(`Found ${sslFiles.length} SSL certificate reference(s)`));
+  }
   const environment = getEnvironment(options);
-  const body = JSON.stringify({ key, strict: Boolean(options.strict), trees, files, environment });
+  const body = JSON.stringify({ key, strict: Boolean(options.strict), trees, files, sslFiles, environment });
   let response;
   try {
     response = await fetch(analyzeUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body });
