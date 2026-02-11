@@ -1,16 +1,11 @@
+"use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
-var __commonJS = (cb, mod) => function __require2() {
+var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __copyProps = (to, from, except, desc) => {
@@ -32,7 +27,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/error.js
 var require_error = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/error.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/error.js"(exports2) {
     "use strict";
     var CommanderError2 = class extends Error {
       /**
@@ -61,14 +56,14 @@ var require_error = __commonJS({
         this.name = this.constructor.name;
       }
     };
-    exports.CommanderError = CommanderError2;
-    exports.InvalidArgumentError = InvalidArgumentError2;
+    exports2.CommanderError = CommanderError2;
+    exports2.InvalidArgumentError = InvalidArgumentError2;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/argument.js
 var require_argument = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/argument.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/argument.js"(exports2) {
     "use strict";
     var { InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var Argument2 = class {
@@ -189,14 +184,14 @@ var require_argument = __commonJS({
       const nameOutput = arg.name() + (arg.variadic === true ? "..." : "");
       return arg.required ? "<" + nameOutput + ">" : "[" + nameOutput + "]";
     }
-    exports.Argument = Argument2;
-    exports.humanReadableArgName = humanReadableArgName;
+    exports2.Argument = Argument2;
+    exports2.humanReadableArgName = humanReadableArgName;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/help.js
 var require_help = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/help.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/help.js"(exports2) {
     "use strict";
     var { humanReadableArgName } = require_argument();
     var Help2 = class {
@@ -605,13 +600,13 @@ var require_help = __commonJS({
         }).join("\n");
       }
     };
-    exports.Help = Help2;
+    exports2.Help = Help2;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/option.js
 var require_option = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/option.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/option.js"(exports2) {
     "use strict";
     var { InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var Option2 = class {
@@ -877,14 +872,14 @@ var require_option = __commonJS({
       }
       return { shortFlag, longFlag };
     }
-    exports.Option = Option2;
-    exports.DualOptions = DualOptions;
+    exports2.Option = Option2;
+    exports2.DualOptions = DualOptions;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/suggestSimilar.js
 var require_suggestSimilar = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/suggestSimilar.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/suggestSimilar.js"(exports2) {
     "use strict";
     var maxDistance = 3;
     function editDistance(a, b) {
@@ -959,19 +954,19 @@ var require_suggestSimilar = __commonJS({
       }
       return "";
     }
-    exports.suggestSimilar = suggestSimilar;
+    exports2.suggestSimilar = suggestSimilar;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/command.js
 var require_command = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/command.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/lib/command.js"(exports2) {
     "use strict";
-    var EventEmitter2 = __require("events").EventEmitter;
-    var childProcess = __require("child_process");
-    var path2 = __require("path");
-    var fs = __require("fs");
-    var process3 = __require("process");
+    var EventEmitter2 = require("events").EventEmitter;
+    var childProcess = require("child_process");
+    var path2 = require("path");
+    var fs = require("fs");
+    var process3 = require("process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
     var { Help: Help2 } = require_help();
@@ -3003,30 +2998,30 @@ Expecting one of '${allowedValues.join("', '")}'`);
         return arg;
       });
     }
-    exports.Command = Command2;
+    exports2.Command = Command2;
   }
 });
 
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/index.js
 var require_commander = __commonJS({
-  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/index.js"(exports) {
+  "node_modules/.pnpm/commander@12.1.0/node_modules/commander/index.js"(exports2) {
     "use strict";
     var { Argument: Argument2 } = require_argument();
     var { Command: Command2 } = require_command();
     var { CommanderError: CommanderError2, InvalidArgumentError: InvalidArgumentError2 } = require_error();
     var { Help: Help2 } = require_help();
     var { Option: Option2 } = require_option();
-    exports.program = new Command2();
-    exports.createCommand = (name) => new Command2(name);
-    exports.createOption = (flags, description) => new Option2(flags, description);
-    exports.createArgument = (name, description) => new Argument2(name, description);
-    exports.Command = Command2;
-    exports.Option = Option2;
-    exports.Argument = Argument2;
-    exports.Help = Help2;
-    exports.CommanderError = CommanderError2;
-    exports.InvalidArgumentError = InvalidArgumentError2;
-    exports.InvalidOptionArgumentError = InvalidArgumentError2;
+    exports2.program = new Command2();
+    exports2.createCommand = (name) => new Command2(name);
+    exports2.createOption = (flags, description) => new Option2(flags, description);
+    exports2.createArgument = (name, description) => new Argument2(name, description);
+    exports2.Command = Command2;
+    exports2.Option = Option2;
+    exports2.Argument = Argument2;
+    exports2.Help = Help2;
+    exports2.CommanderError = CommanderError2;
+    exports2.InvalidArgumentError = InvalidArgumentError2;
+    exports2.InvalidOptionArgumentError = InvalidArgumentError2;
   }
 });
 
@@ -3041,15 +3036,15 @@ var NGINX_CONFIG_PATTERNS = ["**/nginx.conf", "**/nginx/**/*.conf", "**/*.nginx.
 var EXCLUDE_PATTERNS = ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/binaries/**"];
 
 // src/fileDiscovery.ts
-import { dirname, isAbsolute, join, resolve as resolve2 } from "path";
+var import_path2 = require("path");
 
 // src/utils/file.ts
-import { readFileSync, existsSync } from "fs";
-import { resolve } from "path";
+var import_fs = require("fs");
+var import_path = require("path");
 var readConfigFile = (filePath) => {
-  const absolutePath = resolve(filePath);
-  if (!existsSync(absolutePath)) throw new Error(`File not found: ${filePath}`);
-  return readFileSync(absolutePath, "utf-8");
+  const absolutePath = (0, import_path.resolve)(filePath);
+  if (!(0, import_fs.existsSync)(absolutePath)) throw new Error(`File not found: ${filePath}`);
+  return (0, import_fs.readFileSync)(absolutePath, "utf-8");
 };
 
 // src/parser/lexer.ts
@@ -3234,7 +3229,7 @@ var logVerbose = (fn, verbose) => {
 };
 
 // src/fileDiscovery.ts
-import { existsSync as existsSync2, statSync } from "fs";
+var import_fs3 = require("fs");
 
 // node_modules/.pnpm/@isaacs+balanced-match@4.0.1/node_modules/@isaacs/balanced-match/dist/esm/index.js
 var balanced = (a, b, str) => {
@@ -4791,7 +4786,7 @@ minimatch.escape = escape;
 minimatch.unescape = unescape;
 
 // node_modules/.pnpm/glob@13.0.1/node_modules/glob/dist/esm/glob.js
-import { fileURLToPath as fileURLToPath2 } from "url";
+var import_node_url2 = require("url");
 
 // node_modules/.pnpm/lru-cache@11.2.5/node_modules/lru-cache/dist/esm/index.js
 var defaultPerf = typeof performance === "object" && performance && typeof performance.now === "function" ? performance : Date;
@@ -6217,24 +6212,24 @@ var LRUCache = class _LRUCache {
 };
 
 // node_modules/.pnpm/path-scurry@2.0.1/node_modules/path-scurry/dist/esm/index.js
-import { posix, win32 } from "path";
-import { fileURLToPath } from "url";
-import { lstatSync, readdir as readdirCB, readdirSync, readlinkSync, realpathSync as rps } from "fs";
-import * as actualFS from "fs";
-import { lstat, readdir, readlink, realpath } from "fs/promises";
+var import_node_path = require("path");
+var import_node_url = require("url");
+var import_fs2 = require("fs");
+var actualFS = __toESM(require("fs"), 1);
+var import_promises = require("fs/promises");
 
 // node_modules/.pnpm/minipass@7.1.2/node_modules/minipass/dist/esm/index.js
-import { EventEmitter } from "events";
-import Stream from "stream";
-import { StringDecoder } from "string_decoder";
+var import_node_events = require("events");
+var import_node_stream = __toESM(require("stream"), 1);
+var import_node_string_decoder = require("string_decoder");
 var proc = typeof process === "object" && process ? process : {
   stdout: null,
   stderr: null
 };
-var isStream = (s) => !!s && typeof s === "object" && (s instanceof Minipass || s instanceof Stream || isReadable(s) || isWritable(s));
-var isReadable = (s) => !!s && typeof s === "object" && s instanceof EventEmitter && typeof s.pipe === "function" && // node core Writable streams have a pipe() method, but it throws
-s.pipe !== Stream.Writable.prototype.pipe;
-var isWritable = (s) => !!s && typeof s === "object" && s instanceof EventEmitter && typeof s.write === "function" && typeof s.end === "function";
+var isStream = (s) => !!s && typeof s === "object" && (s instanceof Minipass || s instanceof import_node_stream.default || isReadable(s) || isWritable(s));
+var isReadable = (s) => !!s && typeof s === "object" && s instanceof import_node_events.EventEmitter && typeof s.pipe === "function" && // node core Writable streams have a pipe() method, but it throws
+s.pipe !== import_node_stream.default.Writable.prototype.pipe;
+var isWritable = (s) => !!s && typeof s === "object" && s instanceof import_node_events.EventEmitter && typeof s.write === "function" && typeof s.end === "function";
 var EOF = /* @__PURE__ */ Symbol("EOF");
 var MAYBE_EMIT_END = /* @__PURE__ */ Symbol("maybeEmitEnd");
 var EMITTED_END = /* @__PURE__ */ Symbol("emittedEnd");
@@ -6310,7 +6305,7 @@ var PipeProxyErrors = class extends Pipe {
 };
 var isObjectModeOptions = (o) => !!o.objectMode;
 var isEncodingOptions = (o) => !o.objectMode && !!o.encoding && o.encoding !== "buffer";
-var Minipass = class extends EventEmitter {
+var Minipass = class extends import_node_events.EventEmitter {
   [FLOWING] = false;
   [PAUSED] = false;
   [PIPES] = [];
@@ -6361,7 +6356,7 @@ var Minipass = class extends EventEmitter {
       this[ENCODING] = null;
     }
     this[ASYNC] = !!options.async;
-    this[DECODER] = this[ENCODING] ? new StringDecoder(this[ENCODING]) : null;
+    this[DECODER] = this[ENCODING] ? new import_node_string_decoder.StringDecoder(this[ENCODING]) : null;
     if (options && options.debugExposeBuffer === true) {
       Object.defineProperty(this, "buffer", { get: () => this[BUFFER] });
     }
@@ -7102,18 +7097,18 @@ var Minipass = class extends EventEmitter {
 };
 
 // node_modules/.pnpm/path-scurry@2.0.1/node_modules/path-scurry/dist/esm/index.js
-var realpathSync = rps.native;
+var realpathSync = import_fs2.realpathSync.native;
 var defaultFS = {
-  lstatSync,
-  readdir: readdirCB,
-  readdirSync,
-  readlinkSync,
+  lstatSync: import_fs2.lstatSync,
+  readdir: import_fs2.readdir,
+  readdirSync: import_fs2.readdirSync,
+  readlinkSync: import_fs2.readlinkSync,
   realpathSync,
   promises: {
-    lstat,
-    readdir,
-    readlink,
-    realpath
+    lstat: import_promises.lstat,
+    readdir: import_promises.readdir,
+    readlink: import_promises.readlink,
+    realpath: import_promises.realpath
   }
 };
 var fsFromOption = (fsOption) => !fsOption || fsOption === defaultFS || fsOption === actualFS ? defaultFS : {
@@ -8126,7 +8121,7 @@ var PathWin32 = class _PathWin32 extends PathBase {
    * @internal
    */
   getRootString(path2) {
-    return win32.parse(path2).root;
+    return import_node_path.win32.parse(path2).root;
   }
   /**
    * @internal
@@ -8225,7 +8220,7 @@ var PathScurryBase = class {
   constructor(cwd = process.cwd(), pathImpl, sep2, { nocase, childrenCacheSize = 16 * 1024, fs = defaultFS } = {}) {
     this.#fs = fsFromOption(fs);
     if (cwd instanceof URL || cwd.startsWith("file://")) {
-      cwd = fileURLToPath(cwd);
+      cwd = (0, import_node_url.fileURLToPath)(cwd);
     }
     const cwdPath = pathImpl.resolve(cwd);
     this.roots = /* @__PURE__ */ Object.create(null);
@@ -8766,7 +8761,7 @@ var PathScurryWin32 = class extends PathScurryBase {
   sep = "\\";
   constructor(cwd = process.cwd(), opts = {}) {
     const { nocase = true } = opts;
-    super(cwd, win32, "\\", { ...opts, nocase });
+    super(cwd, import_node_path.win32, "\\", { ...opts, nocase });
     this.nocase = nocase;
     for (let p = this.cwd; p; p = p.parent) {
       p.nocase = this.nocase;
@@ -8776,7 +8771,7 @@ var PathScurryWin32 = class extends PathScurryBase {
    * @internal
    */
   parseRootPath(dir) {
-    return win32.parse(dir).root.toUpperCase();
+    return import_node_path.win32.parse(dir).root.toUpperCase();
   }
   /**
    * @internal
@@ -8798,7 +8793,7 @@ var PathScurryPosix = class extends PathScurryBase {
   sep = "/";
   constructor(cwd = process.cwd(), opts = {}) {
     const { nocase = false } = opts;
-    super(cwd, posix, "/", { ...opts, nocase });
+    super(cwd, import_node_path.posix, "/", { ...opts, nocase });
     this.nocase = nocase;
   }
   /**
@@ -9690,7 +9685,7 @@ var Glob = class {
     if (!opts.cwd) {
       this.cwd = "";
     } else if (opts.cwd instanceof URL || opts.cwd.startsWith("file://")) {
-      opts.cwd = fileURLToPath2(opts.cwd);
+      opts.cwd = (0, import_node_url2.fileURLToPath)(opts.cwd);
     }
     this.cwd = opts.cwd || "";
     this.root = opts.root;
@@ -10076,16 +10071,16 @@ var ansiStyles = assembleStyles();
 var ansi_styles_default = ansiStyles;
 
 // node_modules/.pnpm/chalk@5.6.2/node_modules/chalk/source/vendor/supports-color/index.js
-import process2 from "process";
-import os from "os";
-import tty from "tty";
-function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : process2.argv) {
+var import_node_process = __toESM(require("process"), 1);
+var import_node_os = __toESM(require("os"), 1);
+var import_node_tty = __toESM(require("tty"), 1);
+function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : import_node_process.default.argv) {
   const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
   const position = argv.indexOf(prefix + flag);
   const terminatorPosition = argv.indexOf("--");
   return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
 }
-var { env } = process2;
+var { env } = import_node_process.default;
 var flagForceColor;
 if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
   flagForceColor = 0;
@@ -10141,8 +10136,8 @@ function _supportsColor(haveStream, { streamIsTTY, sniffFlags = true } = {}) {
   if (env.TERM === "dumb") {
     return min;
   }
-  if (process2.platform === "win32") {
-    const osRelease = os.release().split(".");
+  if (import_node_process.default.platform === "win32") {
+    const osRelease = import_node_os.default.release().split(".");
     if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
       return Number(osRelease[2]) >= 14931 ? 3 : 2;
     }
@@ -10202,8 +10197,8 @@ function createSupportsColor(stream2, options = {}) {
   return translateLevel(level);
 }
 var supportsColor = {
-  stdout: createSupportsColor({ isTTY: tty.isatty(1) }),
-  stderr: createSupportsColor({ isTTY: tty.isatty(2) })
+  stdout: createSupportsColor({ isTTY: import_node_tty.default.isatty(1) }),
+  stderr: createSupportsColor({ isTTY: import_node_tty.default.isatty(2) })
 };
 var supports_color_default = supportsColor;
 
@@ -10426,7 +10421,7 @@ var extractIncludeDependencies = async (filePath, allFiles) => {
   try {
     const content = readConfigFile(filePath);
     const ast = parseNginxConfig(content);
-    const baseDir = dirname(resolve2(filePath));
+    const baseDir = (0, import_path2.dirname)((0, import_path2.resolve)(filePath));
     const includePaths = findIncludeDirectives(ast);
     for (const includePath of includePaths) {
       const resolvedPaths = resolveIncludePath(includePath, baseDir);
@@ -10452,11 +10447,11 @@ var findIncludeDirectives = (ast) => {
 };
 var resolveIncludePath = (includePath, baseDir) => {
   if (hasGlobPattern(includePath)) {
-    const pattern = isAbsolute(includePath) ? includePath : join(baseDir, includePath);
+    const pattern = (0, import_path2.isAbsolute)(includePath) ? includePath : (0, import_path2.join)(baseDir, includePath);
     return resolveGlobPattern(pattern);
   }
-  const fullPath = isAbsolute(includePath) ? includePath : join(baseDir, includePath);
-  if (existsSync2(fullPath)) return [fullPath];
+  const fullPath = (0, import_path2.isAbsolute)(includePath) ? includePath : (0, import_path2.join)(baseDir, includePath);
+  if ((0, import_fs3.existsSync)(fullPath)) return [fullPath];
   return [];
 };
 var hasGlobPattern = (path2) => path2.includes("*") || path2.includes("?") || path2.includes("[");
@@ -10523,7 +10518,7 @@ var findRootFiles = (component, graph) => {
 var isValidNginxConfig = (filePath) => {
   const maxSize = 10 * 1024 * 1024;
   try {
-    const stats = statSync(filePath);
+    const stats = (0, import_fs3.statSync)(filePath);
     if (!stats.isFile()) return false;
     if (stats.size === 0) return false;
     if (stats.size > maxSize) return false;
@@ -10641,13 +10636,13 @@ var handleCiError = (error) => {
 };
 
 // src/sslFileDetector.ts
-import { existsSync as existsSync3, statSync as statSync2, readFileSync as readFileSync2 } from "fs";
-import { dirname as dirname2, resolve as resolve3, relative } from "path";
+var import_fs4 = require("fs");
+var import_path3 = require("path");
 var SSL_DIRECTIVES = ["ssl_certificate", "ssl_certificate_key"];
 var resolvePath = (filePath, baseFile) => {
   try {
-    const baseDir = dirname2(resolve3(baseFile));
-    return resolve3(baseDir, filePath);
+    const baseDir = (0, import_path3.dirname)((0, import_path3.resolve)(baseFile));
+    return (0, import_path3.resolve)(baseDir, filePath);
   } catch {
     return null;
   }
@@ -10656,7 +10651,7 @@ var fileExists = (filePath, baseFile) => {
   const absolutePath = resolvePath(filePath, baseFile);
   if (!absolutePath) return false;
   try {
-    return existsSync3(absolutePath) && statSync2(absolutePath).isFile();
+    return (0, import_fs4.existsSync)(absolutePath) && (0, import_fs4.statSync)(absolutePath).isFile();
   } catch {
     return false;
   }
@@ -10684,7 +10679,7 @@ var extractSslDirectivesFromNode = (node, configFile, results) => {
 };
 var parseConfigFile = (absolutePath) => {
   try {
-    const content = readFileSync2(absolutePath, "utf-8");
+    const content = (0, import_fs4.readFileSync)(absolutePath, "utf-8");
     const tokens = tokenize(content);
     const parser = new Parser(tokens);
     return parser.parse();
@@ -10698,7 +10693,7 @@ var extractSslFiles = (configFiles, baseDir) => {
   for (const absoluteConfigPath of configFiles) {
     const ast = parseConfigFile(absoluteConfigPath);
     if (!ast) continue;
-    const relativePath2 = relative(baseDir, absoluteConfigPath);
+    const relativePath2 = (0, import_path3.relative)(baseDir, absoluteConfigPath);
     const tempResults = [];
     for (const node of ast.children) {
       extractSslDirectivesFromNode(node, absoluteConfigPath, tempResults);
@@ -10706,7 +10701,7 @@ var extractSslFiles = (configFiles, baseDir) => {
     for (const sslFile of tempResults) {
       const absoluteSslPath = resolvePath(sslFile.path, absoluteConfigPath);
       if (!absoluteSslPath) continue;
-      const relativeSslPath = relative(baseDir, absoluteSslPath);
+      const relativeSslPath = (0, import_path3.relative)(baseDir, absoluteSslPath);
       const key = `${relativeSslPath}:${sslFile.directive}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -10740,8 +10735,8 @@ var {
 } = import_index.default;
 
 // src/index.ts
-import { resolve as resolve4 } from "path";
-import { readFileSync as readFileSync3 } from "fs";
+var import_path4 = require("path");
+var import_fs5 = require("fs");
 var program2 = new Command();
 program2.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
 program2.argument("[directory]", "Directory to search for nginx configs", ".").option("-s, --strict", "Fail on warnings").option("-v, --verbose", "Verbose output").option("--format <format>", "Output format (json|text)", "text").option("--pattern <pattern>", "Custom search pattern for nginx files").option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)").option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)").action(async (directory, options) => {
@@ -10754,7 +10749,7 @@ program2.argument("[directory]", "Directory to search for nginx configs", ".").o
 program2.parse();
 var getKey = (options) => options.key ?? process.env.NGINX_ANALYZE_TOKEN ?? null;
 var getEnvironment = (options) => options.environment ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
-var toRelativePath = (baseDir, absolutePath) => relativePath(resolve4(baseDir), resolve4(absolutePath));
+var toRelativePath = (baseDir, absolutePath) => relativePath((0, import_path4.resolve)(baseDir), (0, import_path4.resolve)(absolutePath));
 function relativePath(base, full) {
   const baseParts = base.split(/[/\\]/).filter(Boolean);
   const fullParts = full.split(/[/\\]/).filter(Boolean);
@@ -10769,7 +10764,7 @@ var buildPayload = (trees, baseDir) => {
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
-      if (!files[rel]) files[rel] = readFileSync3(absPath, "utf-8");
+      if (!files[rel]) files[rel] = (0, import_fs5.readFileSync)(absPath, "utf-8");
       allAbsolutePaths.push(absPath);
       return rel;
     });
@@ -10804,7 +10799,7 @@ Found ${totalFiles} file(s) in ${configTrees.length} tree(s)`));
       console.log(source_default.cyan(`  Tree ${i + 1}: ${tree.allFiles.length} file(s)`));
     });
   }
-  const baseDir = resolve4(directory);
+  const baseDir = (0, import_path4.resolve)(directory);
   const { trees, files, sslFiles } = buildPayload(configTrees, baseDir);
   if (options.verbose) {
     console.log(source_default.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));

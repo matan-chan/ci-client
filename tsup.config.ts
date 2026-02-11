@@ -2,8 +2,8 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['esm'],
+  format: ['cjs'],
   target: 'node18',
-  noExternal: [/.*/],
+  noExternal: ['chalk', 'commander', 'glob'],
   clean: true,
 })
