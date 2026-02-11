@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "bun run src/index.ts",
-    "build": "tsup src/index.ts --format esm --target node18",
+    "build": "tsup",
     "build:binary": "bun build ./src/index.ts --compile --outfile nginx-analyze-ci"
   },
   "dependencies": {
