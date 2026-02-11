@@ -9,34 +9,10 @@ import { resolve } from "path";
 import { readFileSync } from "fs";
 import chalk from "chalk";
 
-const program = new Command();
-
-program.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
-
-program
-  .argument("[directory]", "Directory to search for nginx configs", ".")
-  .option("-s, --strict", "Fail on warnings")
-  .option("-v, --verbose", "Verbose output")
-  .option("--format <format>", "Output format (json|text)", "text")
-  .option("--pattern <pattern>", "Custom search pattern for nginx files")
-  .option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)")
-  .option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)")
-  .action(async (directory: string, options: Record<string, unknown>) => {
-    try {
-      await handleCiClientCommand(directory, options);
-    } catch (error) {
-      handleCiError(error);
-    }
-  });
-
-program.parse();
-
 const getKey = (options: Record<string, unknown>): string | null => (options.key as string) ?? process.env.NGINX_ANALYZE_TOKEN ?? null;
 
 const getEnvironment = (options: Record<string, unknown>): string =>
   (options.environment as string) ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
-
-const toRelativePath = (baseDir: string, absolutePath: string): string => relativePath(resolve(baseDir), resolve(absolutePath));
 
 function relativePath(base: string, full: string): string {
   const baseParts = base.split(/[/\\]/).filter(Boolean);
@@ -46,6 +22,8 @@ function relativePath(base: string, full: string): string {
   const rel = fullParts.slice(i).join("/");
   return rel || (fullParts[fullParts.length - 1] ?? "");
 }
+
+const toRelativePath = (baseDir: string, absolutePath: string): string => relativePath(resolve(baseDir), resolve(absolutePath));
 
 const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles: string[] }[]; files: Record<string, string>; sslFiles: SslFileInfo[] } => {
   const files: Record<string, string> = {};
@@ -165,3 +143,25 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   displaySummary(result as unknown as Parameters<typeof displaySummary>[0]);
   handleCiExitCode(result, options);
 }
+
+const program = new Command();
+
+program.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
+
+program
+  .argument("[directory]", "Directory to search for nginx configs", ".")
+  .option("-s, --strict", "Fail on warnings")
+  .option("-v, --verbose", "Verbose output")
+  .option("--format <format>", "Output format (json|text)", "text")
+  .option("--pattern <pattern>", "Custom search pattern for nginx files")
+  .option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)")
+  .option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)")
+  .action(async (directory: string, options: Record<string, unknown>) => {
+    try {
+      await handleCiClientCommand(directory, options);
+    } catch (error) {
+      handleCiError(error);
+    }
+  });
+
+program.parse();

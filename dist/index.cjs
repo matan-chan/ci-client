@@ -10737,19 +10737,8 @@ var {
 // src/index.ts
 var import_path4 = require("path");
 var import_fs5 = require("fs");
-var program2 = new Command();
-program2.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
-program2.argument("[directory]", "Directory to search for nginx configs", ".").option("-s, --strict", "Fail on warnings").option("-v, --verbose", "Verbose output").option("--format <format>", "Output format (json|text)", "text").option("--pattern <pattern>", "Custom search pattern for nginx files").option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)").option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)").action(async (directory, options) => {
-  try {
-    await handleCiClientCommand(directory, options);
-  } catch (error) {
-    handleCiError(error);
-  }
-});
-program2.parse();
 var getKey = (options) => options.key ?? process.env.NGINX_ANALYZE_TOKEN ?? null;
 var getEnvironment = (options) => options.environment ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
-var toRelativePath = (baseDir, absolutePath) => relativePath((0, import_path4.resolve)(baseDir), (0, import_path4.resolve)(absolutePath));
 function relativePath(base, full) {
   const baseParts = base.split(/[/\\]/).filter(Boolean);
   const fullParts = full.split(/[/\\]/).filter(Boolean);
@@ -10758,6 +10747,7 @@ function relativePath(base, full) {
   const rel = fullParts.slice(i).join("/");
   return rel || (fullParts[fullParts.length - 1] ?? "");
 }
+var toRelativePath = (baseDir, absolutePath) => relativePath((0, import_path4.resolve)(baseDir), (0, import_path4.resolve)(absolutePath));
 var buildPayload = (trees, baseDir) => {
   const files = {};
   const allAbsolutePaths = [];
@@ -10855,3 +10845,13 @@ Found ${totalFiles} file(s) in ${configTrees.length} tree(s)`));
   displaySummary(result);
   handleCiExitCode(result, options);
 }
+var program2 = new Command();
+program2.name("nginx-analyze-ci").description("CI client: discover nginx configs and send to analysis server").version("0.1.0");
+program2.argument("[directory]", "Directory to search for nginx configs", ".").option("-s, --strict", "Fail on warnings").option("-v, --verbose", "Verbose output").option("--format <format>", "Output format (json|text)", "text").option("--pattern <pattern>", "Custom search pattern for nginx files").option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)").option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)").action(async (directory, options) => {
+  try {
+    await handleCiClientCommand(directory, options);
+  } catch (error) {
+    handleCiError(error);
+  }
+});
+program2.parse();
