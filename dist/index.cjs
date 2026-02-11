@@ -10763,17 +10763,21 @@ var buildPayload = (trees, baseDir) => {
   const sslFiles = extractSslFiles(allAbsolutePaths, baseDir);
   return { trees: treesPayload, files, sslFiles };
 };
+var getAnalyzeUrl = () => {
+  const raw = process.env.NGINX_ANALYZE_URL?.trim() ?? "";
+  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://test.gremlingraph.com";
+  return `${base}/analyze`;
+};
 async function handleCiClientCommand(directory, options) {
-  const serverUrl = "https://test.gremlingraph.com/analyze";
   const key = getKey(options);
   if (!key?.trim()) {
     console.error(source_default.red("Missing API key. Set --key or NGINX_ANALYZE_TOKEN"));
     process.exit(EXIT_LICENSE_ERROR);
   }
-  const baseUrl = serverUrl.replace(/\/$/, "");
-  const analyzeUrl = `${baseUrl}/analyze`;
+  const analyzeUrl = getAnalyzeUrl();
   console.log(source_default.blue("CI client: discovering nginx configurations..."));
   console.log(source_default.gray(`Directory: ${directory}`));
+  if (options.verbose) console.log(source_default.gray(`Server: ${analyzeUrl}`));
   if (options.strict) console.log(source_default.gray("Mode: strict"));
   const configTrees = await findIndependentConfigTrees(directory, options);
   if (configTrees.length === 0) {

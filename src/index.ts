@@ -44,8 +44,13 @@ const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles
   return { trees: treesPayload, files, sslFiles };
 };
 
+const getAnalyzeUrl = (): string => {
+  const raw = process.env.NGINX_ANALYZE_URL?.trim() ?? "";
+  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://test.gremlingraph.com";
+  return `${base}/analyze`;
+};
+
 async function handleCiClientCommand(directory: string, options: Record<string, unknown>): Promise<void> {
-  const serverUrl = 'https://test.gremlingraph.com/analyze';
   const key = getKey(options);
 
   if (!key?.trim()) {
@@ -53,11 +58,11 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
     process.exit(EXIT_LICENSE_ERROR);
   }
 
-  const baseUrl = serverUrl.replace(/\/$/, "");
-  const analyzeUrl = `${baseUrl}/analyze`;
+  const analyzeUrl = getAnalyzeUrl();
 
   console.log(chalk.blue("CI client: discovering nginx configurations..."));
   console.log(chalk.gray(`Directory: ${directory}`));
+  if (options.verbose) console.log(chalk.gray(`Server: ${analyzeUrl}`));
   if (options.strict) console.log(chalk.gray("Mode: strict"));
 
   const configTrees = await findIndependentConfigTrees(directory, options as { pattern?: string; verbose?: boolean });
