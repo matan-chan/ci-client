@@ -11,8 +11,7 @@ import chalk from "chalk";
 
 const getKey = (options: Record<string, unknown>): string | null => (options.key as string) ?? process.env.NGINX_ANALYZE_TOKEN ?? null;
 
-const getEnvironment = (options: Record<string, unknown>): string =>
-  (options.environment as string) ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
+const getEnvironment = (options: Record<string, unknown>): string => (options.environment as string) ?? process.env.NGINX_ANALYZE_ENVIRONMENT ?? "";
 
 function relativePath(base: string, full: string): string {
   const baseParts = base.split(/[/\\]/).filter(Boolean);
@@ -28,7 +27,7 @@ const toRelativePath = (baseDir: string, absolutePath: string): string => relati
 const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles: string[] }[]; files: Record<string, string>; sslFiles: SslFileInfo[] } => {
   const files: Record<string, string> = {};
   const allAbsolutePaths: string[] = [];
-  
+
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
@@ -38,9 +37,9 @@ const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles
     });
     return { allFiles };
   });
-  
+
   const sslFiles = extractSslFiles(allAbsolutePaths, baseDir);
-  
+
   return { trees: treesPayload, files, sslFiles };
 };
 

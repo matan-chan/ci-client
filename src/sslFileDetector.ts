@@ -33,19 +33,15 @@ const fileExists = (filePath: string, baseFile: string): boolean => {
   }
 };
 
-const extractSslDirectivesFromNode = (
-  node: ASTNode,
-  configFile: string,
-  results: SslFileInfo[]
-): void => {
+const extractSslDirectivesFromNode = (node: ASTNode, configFile: string, results: SslFileInfo[]): void => {
   if (node.type === "directive" && SSL_DIRECTIVES.includes(node.name as any)) {
     const directive = node.name as "ssl_certificate" | "ssl_certificate_key";
     const sslFilePath = node.args[0];
-    
+
     if (sslFilePath) {
       const absolutePath = resolvePath(sslFilePath, configFile);
       const exists = fileExists(sslFilePath, configFile);
-      
+
       results.push({
         path: sslFilePath,
         exists,
@@ -73,10 +69,7 @@ const parseConfigFile = (absolutePath: string): Config | null => {
   }
 };
 
-export const extractSslFiles = (
-  configFiles: string[],
-  baseDir: string
-): SslFileInfo[] => {
+export const extractSslFiles = (configFiles: string[], baseDir: string): SslFileInfo[] => {
   const results: SslFileInfo[] = [];
   const seen = new Set<string>();
 
