@@ -3032,6 +3032,7 @@ var EXIT_WARNING = 1;
 var EXIT_ERROR = 2;
 var EXIT_FAILURE = 3;
 var EXIT_LICENSE_ERROR = 4;
+var EXIT_THRESHOLD_FAILED = 5;
 var NGINX_CONFIG_PATTERNS = ["**/nginx.conf", "**/nginx/**/*.conf", "**/*.nginx.conf", "**/conf.d/**/*.conf", "**/sites-available/**/*", "**/sites-enabled/**/*", "**/*.conf"];
 var EXCLUDE_PATTERNS = ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**", "**/binaries/**"];
 
@@ -10608,18 +10609,30 @@ var generateScoreBar = (score, length = 20) => {
 };
 
 // src/exitHandlers.ts
+var hasThresholdFailure = (result) => result.jobFailed === true;
+var isThresholdPassedExplicitly = (result) => result.hasThreshold === true && result.jobFailed !== true;
+var hasErrors = (result) => (result.errorCount ?? 0) > 0;
+var hasWarnings = (result) => (result.warningCount ?? 0) > 0;
 var handleCiExitCode = (result, options) => {
-  if ((result.errorCount ?? 0) > 0) {
+  if (hasThresholdFailure(result)) {
+    console.log(source_default.red("\n\u2717 Analysis failed: score is below configured threshold"));
+    process.exit(EXIT_THRESHOLD_FAILED);
+  }
+  if (isThresholdPassedExplicitly(result)) {
+    console.log(source_default.green("\n\u2713 Analysis passed: score meets configured threshold"));
+    process.exit(EXIT_SUCCESS);
+  }
+  if (hasErrors(result)) {
     console.log(source_default.red(`
 \u2717 Analysis failed with ${result.errorCount} error(s)`));
     process.exit(EXIT_ERROR);
   }
-  if ((result.warningCount ?? 0) > 0 && options.strict) {
+  if (hasWarnings(result) && options.strict) {
     console.log(source_default.yellow(`
 \u26A0 Analysis completed with ${result.warningCount} warning(s) (strict mode)`));
     process.exit(EXIT_WARNING);
   }
-  if ((result.warningCount ?? 0) > 0) {
+  if (hasWarnings(result)) {
     console.log(source_default.yellow(`
 \u26A0 Analysis completed with ${result.warningCount} warning(s)`));
     process.exit(EXIT_WARNING);
