@@ -1,9 +1,9 @@
 import { findIndependentConfigTrees, type ConfigTree } from "./fileDiscovery";
 import { FORMAT_JSON, EXIT_SUCCESS, EXIT_LICENSE_ERROR } from "./constants";
+import { extractSslFiles, type SslFileInfo } from "./sslFileDetector";
 import { displayIssues, displaySummary } from "./output";
 import { handleCiExitCode } from "./exitHandlers";
 import { handleCiError } from "./errorHandlers";
-import { extractSslFiles, type SslFileInfo } from "./sslFileDetector";
 import { Command } from "commander";
 import { resolve } from "path";
 import { readFileSync } from "fs";
@@ -24,14 +24,18 @@ function relativePath(base: string, full: string): string {
 
 const toRelativePath = (baseDir: string, absolutePath: string): string => relativePath(resolve(baseDir), resolve(absolutePath));
 
-const buildPayload = (trees: ConfigTree[], baseDir: string): { trees: { allFiles: string[] }[]; files: Record<string, string>; sslFiles: SslFileInfo[] } => {
+const buildPayload = (
+  trees: ConfigTree[],
+  baseDir: string,
+  fileContents: Map<string, string>
+): { trees: { allFiles: string[] }[]; files: Record<string, string>; sslFiles: SslFileInfo[] } => {
   const files: Record<string, string> = {};
   const allAbsolutePaths: string[] = [];
 
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
-      if (!files[rel]) files[rel] = readFileSync(absPath, "utf-8");
+      if (!files[rel]) files[rel] = fileContents.get(absPath) ?? readFileSync(absPath, "utf-8");
       allAbsolutePaths.push(absPath);
       return rel;
     });
@@ -64,7 +68,7 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   if (options.verbose) console.log(chalk.gray(`Server: ${analyzeUrl}`));
   if (options.strict) console.log(chalk.gray("Mode: strict"));
 
-  const configTrees = await findIndependentConfigTrees(directory, options as { pattern?: string; verbose?: boolean });
+  const { trees: configTrees, fileContents } = await findIndependentConfigTrees(directory, options as { pattern?: string; verbose?: boolean });
 
   if (configTrees.length === 0) {
     console.log(chalk.yellow("\nNo nginx configuration files found"));
@@ -81,7 +85,7 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   }
 
   const baseDir = resolve(directory);
-  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir);
+  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir, fileContents);
 
   if (options.verbose) {
     console.log(chalk.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));

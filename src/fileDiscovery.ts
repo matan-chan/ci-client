@@ -27,10 +27,18 @@ export const findNginxConfigs = async (directory: string, options: { pattern?: s
   return validFiles;
 };
 
-export const findIndependentConfigTrees = async (directory: string, options: { pattern?: string; verbose?: boolean }): Promise<ConfigTree[]> => {
+export type FindIndependentConfigTreesResult = {
+  trees: ConfigTree[];
+  fileContents: Map<string, string>;
+};
+
+export const findIndependentConfigTrees = async (
+  directory: string,
+  options: { pattern?: string; verbose?: boolean }
+): Promise<FindIndependentConfigTreesResult> => {
   const allConfigFiles = await findNginxConfigs(directory, options);
-  if (allConfigFiles.length === 0) return [];
-  const dependencyGraph = await buildDependencyGraph(allConfigFiles);
+  if (allConfigFiles.length === 0) return { trees: [], fileContents: new Map() };
+  const { graph: dependencyGraph, fileContents } = await buildDependencyGraph(allConfigFiles);
   const trees = findConnectedComponents(allConfigFiles, dependencyGraph);
   logVerbose(() => {
     console.log(chalk.gray(`\nFound ${trees.length} independent config tree(s):`));
@@ -38,35 +46,53 @@ export const findIndependentConfigTrees = async (directory: string, options: { p
       console.log(chalk.gray(`  Tree ${index + 1}: ${tree.rootFiles.length} root file(s), ${tree.allFiles.length} total file(s)`));
     });
   }, options.verbose ?? false);
-  return trees;
+  return { trees, fileContents };
 };
 
-const buildDependencyGraph = async (files: string[]): Promise<Map<string, Set<string>>> => {
-  const graph = new Map<string, Set<string>>();
-  for (const file of files) {
-    const dependencies = await extractIncludeDependencies(file, files);
-    graph.set(file, dependencies);
-  }
-  return graph;
-};
-
-const extractIncludeDependencies = async (filePath: string, allFiles: string[]): Promise<Set<string>> => {
+const extractIncludeDependenciesFromContent = (
+  content: string,
+  filePath: string,
+  allFiles: Set<string>
+): Set<string> => {
   const dependencies = new Set<string>();
   try {
-    const content = readConfigFile(filePath);
     const ast = parseNginxConfig(content);
     const baseDir = dirname(resolve(filePath));
     const includePaths = findIncludeDirectives(ast);
     for (const includePath of includePaths) {
       const resolvedPaths = resolveIncludePath(includePath, baseDir);
-      for (const resolvedPath of resolvedPaths) {
-        if (allFiles.includes(resolvedPath)) dependencies.add(resolvedPath);
-      }
+      for (const resolvedPath of resolvedPaths)
+        if (allFiles.has(resolvedPath)) dependencies.add(resolvedPath);
     }
   } catch {
     // parsing failed, treat as no dependencies
   }
   return dependencies;
+};
+
+const buildDependencyGraph = async (
+  files: string[]
+): Promise<{ graph: Map<string, Set<string>>; fileContents: Map<string, string> }> => {
+  const allFilesSet = new Set(files);
+  const results = await Promise.all(
+    files.map(async (filePath) => {
+      let content: string;
+      try {
+        content = readConfigFile(filePath);
+      } catch {
+        return { filePath, dependencies: new Set<string>(), content: "" };
+      }
+      const dependencies = extractIncludeDependenciesFromContent(content, filePath, allFilesSet);
+      return { filePath, dependencies, content };
+    })
+  );
+  const graph = new Map<string, Set<string>>();
+  const fileContents = new Map<string, string>();
+  for (const { filePath, dependencies, content } of results) {
+    graph.set(filePath, dependencies);
+    if (content) fileContents.set(filePath, content);
+  }
+  return { graph, fileContents };
 };
 
 const findIncludeDirectives = (ast: { children?: { type: string; name?: string; args?: string[]; children?: unknown[] }[] }): string[] => {
@@ -104,21 +130,26 @@ const resolveGlobPattern = (pattern: string): string[] => {
 };
 
 const findConnectedComponents = (allFiles: string[], dependencyGraph: Map<string, Set<string>>): ConfigTree[] => {
+  const reverseGraph = buildReverseGraph(dependencyGraph);
   const visited = new Set<string>();
   const trees: ConfigTree[] = [];
   for (const file of allFiles) {
     if (visited.has(file)) continue;
-    const component = findComponent(file, dependencyGraph, visited);
-    const rootFiles = findRootFiles(component, dependencyGraph);
+    const component = findComponent(file, dependencyGraph, reverseGraph, visited);
+    const rootFiles = findRootFiles(component, reverseGraph);
     trees.push({ rootFiles, allFiles: component, dependencyGraph });
   }
   return trees;
 };
 
-const findComponent = (startFile: string, graph: Map<string, Set<string>>, visited: Set<string>): string[] => {
+const findComponent = (
+  startFile: string,
+  graph: Map<string, Set<string>>,
+  reverseGraph: Map<string, Set<string>>,
+  visited: Set<string>
+): string[] => {
   const component: string[] = [];
   const queue = [startFile];
-  const reverseGraph = buildReverseGraph(graph);
   while (queue.length > 0) {
     const file = queue.shift()!;
     if (visited.has(file)) continue;
@@ -148,8 +179,7 @@ const buildReverseGraph = (graph: Map<string, Set<string>>): Map<string, Set<str
   return reverse;
 };
 
-const findRootFiles = (component: string[], graph: Map<string, Set<string>>): string[] => {
-  const reverseGraph = buildReverseGraph(graph);
+const findRootFiles = (component: string[], reverseGraph: Map<string, Set<string>>): string[] => {
   const rootFiles: string[] = [];
   for (const file of component) {
     const dependents = reverseGraph.get(file) || new Set();
