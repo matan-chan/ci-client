@@ -10397,8 +10397,8 @@ Searching for nginx configs in: ${directory}`)), options.verbose ?? false);
 };
 var findIndependentConfigTrees = async (directory, options) => {
   const allConfigFiles = await findNginxConfigs(directory, options);
-  if (allConfigFiles.length === 0) return [];
-  const dependencyGraph = await buildDependencyGraph(allConfigFiles);
+  if (allConfigFiles.length === 0) return { trees: [], fileContents: /* @__PURE__ */ new Map() };
+  const { graph: dependencyGraph, fileContents } = await buildDependencyGraph(allConfigFiles);
   const trees = findConnectedComponents(allConfigFiles, dependencyGraph);
   logVerbose(() => {
     console.log(source_default.gray(`
@@ -10407,32 +10407,44 @@ Found ${trees.length} independent config tree(s):`));
       console.log(source_default.gray(`  Tree ${index + 1}: ${tree.rootFiles.length} root file(s), ${tree.allFiles.length} total file(s)`));
     });
   }, options.verbose ?? false);
-  return trees;
+  return { trees, fileContents };
 };
-var buildDependencyGraph = async (files) => {
-  const graph = /* @__PURE__ */ new Map();
-  for (const file of files) {
-    const dependencies = await extractIncludeDependencies(file, files);
-    graph.set(file, dependencies);
-  }
-  return graph;
-};
-var extractIncludeDependencies = async (filePath, allFiles) => {
+var extractIncludeDependenciesFromContent = (content, filePath, allFiles) => {
   const dependencies = /* @__PURE__ */ new Set();
   try {
-    const content = readConfigFile(filePath);
     const ast = parseNginxConfig(content);
     const baseDir = (0, import_path2.dirname)((0, import_path2.resolve)(filePath));
     const includePaths = findIncludeDirectives(ast);
     for (const includePath of includePaths) {
       const resolvedPaths = resolveIncludePath(includePath, baseDir);
-      for (const resolvedPath of resolvedPaths) {
-        if (allFiles.includes(resolvedPath)) dependencies.add(resolvedPath);
-      }
+      for (const resolvedPath of resolvedPaths)
+        if (allFiles.has(resolvedPath)) dependencies.add(resolvedPath);
     }
   } catch {
   }
   return dependencies;
+};
+var buildDependencyGraph = async (files) => {
+  const allFilesSet = new Set(files);
+  const results = await Promise.all(
+    files.map(async (filePath) => {
+      let content;
+      try {
+        content = readConfigFile(filePath);
+      } catch {
+        return { filePath, dependencies: /* @__PURE__ */ new Set(), content: "" };
+      }
+      const dependencies = extractIncludeDependenciesFromContent(content, filePath, allFilesSet);
+      return { filePath, dependencies, content };
+    })
+  );
+  const graph = /* @__PURE__ */ new Map();
+  const fileContents = /* @__PURE__ */ new Map();
+  for (const { filePath, dependencies, content } of results) {
+    graph.set(filePath, dependencies);
+    if (content) fileContents.set(filePath, content);
+  }
+  return { graph, fileContents };
 };
 var findIncludeDirectives = (ast) => {
   const includePaths = [];
@@ -10465,20 +10477,20 @@ var resolveGlobPattern = (pattern) => {
   }
 };
 var findConnectedComponents = (allFiles, dependencyGraph) => {
+  const reverseGraph = buildReverseGraph(dependencyGraph);
   const visited = /* @__PURE__ */ new Set();
   const trees = [];
   for (const file of allFiles) {
     if (visited.has(file)) continue;
-    const component = findComponent(file, dependencyGraph, visited);
-    const rootFiles = findRootFiles(component, dependencyGraph);
+    const component = findComponent(file, dependencyGraph, reverseGraph, visited);
+    const rootFiles = findRootFiles(component, reverseGraph);
     trees.push({ rootFiles, allFiles: component, dependencyGraph });
   }
   return trees;
 };
-var findComponent = (startFile, graph, visited) => {
+var findComponent = (startFile, graph, reverseGraph, visited) => {
   const component = [];
   const queue = [startFile];
-  const reverseGraph = buildReverseGraph(graph);
   while (queue.length > 0) {
     const file = queue.shift();
     if (visited.has(file)) continue;
@@ -10506,8 +10518,7 @@ var buildReverseGraph = (graph) => {
   }
   return reverse;
 };
-var findRootFiles = (component, graph) => {
-  const reverseGraph = buildReverseGraph(graph);
+var findRootFiles = (component, reverseGraph) => {
   const rootFiles = [];
   for (const file of component) {
     const dependents = reverseGraph.get(file) || /* @__PURE__ */ new Set();
@@ -10526,6 +10537,98 @@ var isValidNginxConfig = (filePath) => {
     return true;
   } catch {
     return false;
+  }
+};
+
+// src/sslFileDetector.ts
+var import_fs4 = require("fs");
+var import_path3 = require("path");
+var SSL_DIRECTIVE_NAMES = [
+  "ssl_certificate",
+  "ssl_certificate_key"
+];
+var extractSslFiles = (configFiles, baseDir) => {
+  const results = [];
+  const seenKeys = /* @__PURE__ */ new Set();
+  for (const absoluteConfigPath of configFiles) {
+    const infos = getSslInfosFromConfigFile(absoluteConfigPath, baseDir);
+    for (const info of infos) {
+      const key = `${info.path}:${info.directive}`;
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        results.push(info);
+      }
+    }
+  }
+  return results;
+};
+var getSslInfosFromConfigFile = (absoluteConfigPath, baseDir) => {
+  const ast = parseConfigFile(absoluteConfigPath);
+  if (!ast) return [];
+  const relativePath2 = (0, import_path3.relative)(baseDir, absoluteConfigPath);
+  const rawResults = [];
+  for (const node of ast.children)
+    extractSslDirectivesFromNode(node, absoluteConfigPath, rawResults);
+  return rawResults.map(
+    (sslFile) => toRelativeSslInfo(sslFile, absoluteConfigPath, baseDir, relativePath2)
+  ).filter((info) => info !== null);
+};
+var extractSslDirectivesFromNode = (node, configFile, results) => {
+  if (node.type === "directive") {
+    const name = node.name;
+    if (SSL_DIRECTIVE_NAMES.includes(name)) {
+      const sslFilePath = node.args[0];
+      if (sslFilePath) {
+        const exists = fileExists(sslFilePath, configFile);
+        results.push({
+          path: sslFilePath,
+          exists,
+          directive: name,
+          referencedIn: configFile
+        });
+      }
+    }
+  }
+  if (node.type === "block")
+    for (const child of node.children)
+      extractSslDirectivesFromNode(child, configFile, results);
+};
+var toRelativeSslInfo = (sslFile, absoluteConfigPath, baseDir, relativeReferencedIn) => {
+  const absoluteSslPath = resolvePath(sslFile.path, absoluteConfigPath);
+  if (!absoluteSslPath) return null;
+  const relativeSslPath = (0, import_path3.relative)(baseDir, absoluteSslPath);
+  return {
+    path: relativeSslPath,
+    exists: sslFile.exists,
+    directive: sslFile.directive,
+    referencedIn: relativeReferencedIn
+  };
+};
+var parseConfigFile = (absolutePath) => {
+  try {
+    const content = (0, import_fs4.readFileSync)(absolutePath, "utf-8");
+    const tokens = tokenize(content);
+    const parser = new Parser(tokens);
+    return parser.parse();
+  } catch {
+    return null;
+  }
+};
+var fileExists = (filePath, baseFile) => {
+  const absolutePath = resolvePath(filePath, baseFile);
+  if (!absolutePath) return false;
+  try {
+    return (0, import_fs4.existsSync)(absolutePath) && (0, import_fs4.statSync)(absolutePath).isFile();
+  } catch {
+    return false;
+  }
+};
+var resolvePath = (filePath, baseFile) => {
+  try {
+    const baseDir = (0, import_path3.dirname)((0, import_path3.resolve)(baseFile));
+    return (0, import_path3.resolve)(baseDir, filePath);
+  } catch {
+    return null;
   }
 };
 
@@ -10648,88 +10751,6 @@ var handleCiError = (error) => {
   process.exit(EXIT_FAILURE);
 };
 
-// src/sslFileDetector.ts
-var import_fs4 = require("fs");
-var import_path3 = require("path");
-var SSL_DIRECTIVES = ["ssl_certificate", "ssl_certificate_key"];
-var resolvePath = (filePath, baseFile) => {
-  try {
-    const baseDir = (0, import_path3.dirname)((0, import_path3.resolve)(baseFile));
-    return (0, import_path3.resolve)(baseDir, filePath);
-  } catch {
-    return null;
-  }
-};
-var fileExists = (filePath, baseFile) => {
-  const absolutePath = resolvePath(filePath, baseFile);
-  if (!absolutePath) return false;
-  try {
-    return (0, import_fs4.existsSync)(absolutePath) && (0, import_fs4.statSync)(absolutePath).isFile();
-  } catch {
-    return false;
-  }
-};
-var extractSslDirectivesFromNode = (node, configFile, results) => {
-  if (node.type === "directive" && SSL_DIRECTIVES.includes(node.name)) {
-    const directive = node.name;
-    const sslFilePath = node.args[0];
-    if (sslFilePath) {
-      const absolutePath = resolvePath(sslFilePath, configFile);
-      const exists = fileExists(sslFilePath, configFile);
-      results.push({
-        path: sslFilePath,
-        exists,
-        directive,
-        referencedIn: configFile
-      });
-    }
-  }
-  if (node.type === "block") {
-    for (const child of node.children) {
-      extractSslDirectivesFromNode(child, configFile, results);
-    }
-  }
-};
-var parseConfigFile = (absolutePath) => {
-  try {
-    const content = (0, import_fs4.readFileSync)(absolutePath, "utf-8");
-    const tokens = tokenize(content);
-    const parser = new Parser(tokens);
-    return parser.parse();
-  } catch {
-    return null;
-  }
-};
-var extractSslFiles = (configFiles, baseDir) => {
-  const results = [];
-  const seen = /* @__PURE__ */ new Set();
-  for (const absoluteConfigPath of configFiles) {
-    const ast = parseConfigFile(absoluteConfigPath);
-    if (!ast) continue;
-    const relativePath2 = (0, import_path3.relative)(baseDir, absoluteConfigPath);
-    const tempResults = [];
-    for (const node of ast.children) {
-      extractSslDirectivesFromNode(node, absoluteConfigPath, tempResults);
-    }
-    for (const sslFile of tempResults) {
-      const absoluteSslPath = resolvePath(sslFile.path, absoluteConfigPath);
-      if (!absoluteSslPath) continue;
-      const relativeSslPath = (0, import_path3.relative)(baseDir, absoluteSslPath);
-      const key = `${relativeSslPath}:${sslFile.directive}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        results.push({
-          path: relativeSslPath,
-          exists: sslFile.exists,
-          directive: sslFile.directive,
-          referencedIn: relativePath2
-        });
-      }
-    }
-  }
-  return results;
-};
-
 // node_modules/.pnpm/commander@12.1.0/node_modules/commander/esm.mjs
 var import_index = __toESM(require_commander(), 1);
 var {
@@ -10761,13 +10782,13 @@ function relativePath(base, full) {
   return rel || (fullParts[fullParts.length - 1] ?? "");
 }
 var toRelativePath = (baseDir, absolutePath) => relativePath((0, import_path4.resolve)(baseDir), (0, import_path4.resolve)(absolutePath));
-var buildPayload = (trees, baseDir) => {
+var buildPayload = (trees, baseDir, fileContents) => {
   const files = {};
   const allAbsolutePaths = [];
   const treesPayload = trees.map((tree) => {
     const allFiles = tree.allFiles.map((absPath) => {
       const rel = toRelativePath(baseDir, absPath);
-      if (!files[rel]) files[rel] = (0, import_fs5.readFileSync)(absPath, "utf-8");
+      if (!files[rel]) files[rel] = fileContents.get(absPath) ?? (0, import_fs5.readFileSync)(absPath, "utf-8");
       allAbsolutePaths.push(absPath);
       return rel;
     });
@@ -10778,7 +10799,7 @@ var buildPayload = (trees, baseDir) => {
 };
 var getAnalyzeUrl = () => {
   const raw = process.env.NGINX_ANALYZE_URL?.trim() ?? "";
-  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://test.gremlingraph.com";
+  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://nginly.com";
   return `${base}/analyze`;
 };
 async function handleCiClientCommand(directory, options) {
@@ -10792,7 +10813,7 @@ async function handleCiClientCommand(directory, options) {
   console.log(source_default.gray(`Directory: ${directory}`));
   if (options.verbose) console.log(source_default.gray(`Server: ${analyzeUrl}`));
   if (options.strict) console.log(source_default.gray("Mode: strict"));
-  const configTrees = await findIndependentConfigTrees(directory, options);
+  const { trees: configTrees, fileContents } = await findIndependentConfigTrees(directory, options);
   if (configTrees.length === 0) {
     console.log(source_default.yellow("\nNo nginx configuration files found"));
     process.exit(EXIT_SUCCESS);
@@ -10807,7 +10828,7 @@ Found ${totalFiles} file(s) in ${configTrees.length} tree(s)`));
     });
   }
   const baseDir = (0, import_path4.resolve)(directory);
-  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir);
+  const { trees, files, sslFiles } = buildPayload(configTrees, baseDir, fileContents);
   if (options.verbose) {
     console.log(source_default.gray(`Sending ${trees.length} tree(s), ${Object.keys(files).length} file(s) to server`));
     if (sslFiles.length > 0) console.log(source_default.gray(`Found ${sslFiles.length} SSL certificate reference(s)`));

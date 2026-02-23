@@ -49,7 +49,7 @@ const buildPayload = (
 
 const getAnalyzeUrl = (): string => {
   const raw = process.env.NGINX_ANALYZE_URL?.trim() ?? "";
-  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://test.gremlingraph.com";
+  const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://nginly.com";
   return `${base}/analyze`;
 };
 
