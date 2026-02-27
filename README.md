@@ -4,12 +4,20 @@ A **CI pipeline client** that discovers nginx configuration files in your repo, 
 
 ## How users can use it
 
-**Option A – Copy `ci-client` into your repo (recommended)**
+**Option A – npx (recommended when published to npm)**
+
+```bash
+npx @nginly/client . --strict
+```
+
+Set `NGINX_ANALYZE_SERVER_URL` and `NGINX_ANALYZE_TOKEN` in your environment or CI secrets.
+
+**Option B – Copy `ci-client` into your repo**
 
 1. Copy the `ci-client` folder into your project (e.g. next to your `nginx/` configs).
 2. In CI: install deps, build the binary, then run it with env vars set.
 
-**Option B – Run with Node/Bun from source**
+**Option C – Run with Node/Bun from source**
 
 1. Copy the `ci-client` folder into your project.
 2. In CI: `bun install` (or `npm ci`), then run `bun run src/index.ts <directory> --strict` (or `node dist/index.js` after `npm run build`).
@@ -95,6 +103,9 @@ bun run src/index.ts
 # Environment tag
 ./nginx-analyze-ci . --environment production
 NGINX_ANALYZE_ENVIRONMENT=pre ./nginx-analyze-ci .
+
+# Allow quota exceeded: pass (exit 0) with warning instead of failing when usage limit is hit
+./nginx-analyze-ci . --allow-quota-exceeded
 ```
 
 ## CI pipeline examples

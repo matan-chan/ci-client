@@ -1,0 +1,10 @@
+src
+.env
+.env.*
+.git
+.gitignore
+node_modules
+*.log
+tsconfig.json
+tsup.config.ts
+nginx-analyze-ci

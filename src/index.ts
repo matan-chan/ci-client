@@ -48,7 +48,7 @@ const buildPayload = (
 };
 
 const getAnalyzeUrl = (): string => {
-  const raw = process.env.NGINX_ANALYZE_URL?.trim() ?? "";
+  const raw = process.env.NGINX_ANALYZE_SERVER_URL?.trim() ?? process.env.NGINX_ANALYZE_URL?.trim() ?? "";
   const base = raw && raw.startsWith("http") ? raw.replace(/\/$/, "") : "https://nginly.com";
   return `${base}/analyze`;
 };
@@ -67,6 +67,7 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   console.log(chalk.gray(`Directory: ${directory}`));
   if (options.verbose) console.log(chalk.gray(`Server: ${analyzeUrl}`));
   if (options.strict) console.log(chalk.gray("Mode: strict"));
+  if (options.allowQuotaExceeded) console.log(chalk.gray("Mode: allow-quota-exceeded"));
 
   const { trees: configTrees, fileContents } = await findIndependentConfigTrees(directory, options as { pattern?: string; verbose?: boolean });
 
@@ -110,6 +111,22 @@ async function handleCiClientCommand(directory: string, options: Record<string, 
   if (response.status === 401) {
     console.error(chalk.red("Invalid or missing API key"));
     process.exit(EXIT_LICENSE_ERROR);
+    return;
+  }
+
+  if (response.status === 402 && options.allowQuotaExceeded) {
+    let errorMessage = "Usage limit exceeded for this billing period.";
+    try {
+      const json = JSON.parse(text) as { error?: string; usage?: number; limit?: number; tier?: string };
+      if (json.error) errorMessage = json.error;
+      if (json.usage !== undefined && json.limit !== undefined) {
+        errorMessage += ` (${json.usage}/${json.limit} used, tier: ${json.tier ?? "unknown"})`;
+      }
+    } catch {
+      // use default
+    }
+    console.warn(chalk.yellow(`\n⚠ ${errorMessage} Analysis skipped. Job passed with --allow-quota-exceeded.`));
+    process.exit(EXIT_SUCCESS);
     return;
   }
 
@@ -164,6 +181,7 @@ program
   .option("--pattern <pattern>", "Custom search pattern for nginx files")
   .option("--key <key>", "API key (or NGINX_ANALYZE_TOKEN)")
   .option("--environment <env>", "Environment name e.g. production, dev, pre (or NGINX_ANALYZE_ENVIRONMENT)")
+  .option("--allow-quota-exceeded", "Pass with warning when usage limit exceeded (402) instead of failing")
   .action(async (directory: string, options: Record<string, unknown>) => {
     try {
       await handleCiClientCommand(directory, options);
