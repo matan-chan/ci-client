@@ -1,4 +1,4 @@
-import type { Issue, AnalysisResult, Location } from "./types";
+import type { Issue, AnalysisResult, Location } from "../types";
 import chalk from "chalk";
 
 export const displayIssues = (issues: Issue[]): void => {

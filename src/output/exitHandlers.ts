@@ -1,4 +1,4 @@
-import { EXIT_SUCCESS, EXIT_WARNING, EXIT_ERROR, EXIT_THRESHOLD_FAILED } from "./constants";
+import { EXIT_SUCCESS, EXIT_WARNING, EXIT_ERROR, EXIT_THRESHOLD_FAILED } from "../config/constants";
 import chalk from "chalk";
 
 type AnalyzeResult = {

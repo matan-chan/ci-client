@@ -1,8 +1,8 @@
 import { existsSync, statSync, readFileSync } from "fs";
-import type { ASTNode, Config } from "./parser/ast";
+import type { ASTNode, Config } from "../parser/ast";
 import { dirname, resolve, relative } from "path";
-import { tokenize } from "./parser/lexer";
-import { Parser } from "./parser/parser";
+import { tokenize } from "../parser/lexer";
+import { Parser } from "../parser/parser";
 
 export type SslFileInfo = {
   path: string;
@@ -11,15 +11,9 @@ export type SslFileInfo = {
   referencedIn: string;
 };
 
-const SSL_DIRECTIVE_NAMES: (SslFileInfo["directive"])[] = [
-  "ssl_certificate",
-  "ssl_certificate_key",
-];
+const SSL_DIRECTIVE_NAMES: SslFileInfo["directive"][] = ["ssl_certificate", "ssl_certificate_key"];
 
-export const extractSslFiles = (
-  configFiles: string[],
-  baseDir: string
-): SslFileInfo[] => {
+export const extractSslFiles = (configFiles: string[], baseDir: string): SslFileInfo[] => {
   const results: SslFileInfo[] = [];
   const seenKeys = new Set<string>();
 
@@ -36,30 +30,18 @@ export const extractSslFiles = (
   return results;
 };
 
-const getSslInfosFromConfigFile = (
-  absoluteConfigPath: string,
-  baseDir: string
-): SslFileInfo[] => {
+const getSslInfosFromConfigFile = (absoluteConfigPath: string, baseDir: string): SslFileInfo[] => {
   const ast = parseConfigFile(absoluteConfigPath);
   if (!ast) return [];
   const relativePath = relative(baseDir, absoluteConfigPath);
   const rawResults: SslFileInfo[] = [];
 
-  for (const node of ast.children)
-    extractSslDirectivesFromNode(node, absoluteConfigPath, rawResults);
+  for (const node of ast.children) extractSslDirectivesFromNode(node, absoluteConfigPath, rawResults);
 
-  return rawResults
-    .map((sslFile) =>
-      toRelativeSslInfo(sslFile, absoluteConfigPath, baseDir, relativePath)
-    )
-    .filter((info): info is SslFileInfo => info !== null);
+  return rawResults.map((sslFile) => toRelativeSslInfo(sslFile, absoluteConfigPath, baseDir, relativePath)).filter((info): info is SslFileInfo => info !== null);
 };
 
-const extractSslDirectivesFromNode = (
-  node: ASTNode,
-  configFile: string,
-  results: SslFileInfo[]
-): void => {
+const extractSslDirectivesFromNode = (node: ASTNode, configFile: string, results: SslFileInfo[]): void => {
   if (node.type === "directive") {
     const name = node.name;
     if (SSL_DIRECTIVE_NAMES.includes(name as SslFileInfo["directive"])) {
@@ -75,17 +57,10 @@ const extractSslDirectivesFromNode = (
       }
     }
   }
-  if (node.type === "block")
-    for (const child of node.children)
-      extractSslDirectivesFromNode(child, configFile, results);
+  if (node.type === "block") for (const child of node.children) extractSslDirectivesFromNode(child, configFile, results);
 };
 
-const toRelativeSslInfo = (
-  sslFile: SslFileInfo,
-  absoluteConfigPath: string,
-  baseDir: string,
-  relativeReferencedIn: string
-): SslFileInfo | null => {
+const toRelativeSslInfo = (sslFile: SslFileInfo, absoluteConfigPath: string, baseDir: string, relativeReferencedIn: string): SslFileInfo | null => {
   const absoluteSslPath = resolvePath(sslFile.path, absoluteConfigPath);
   if (!absoluteSslPath) return null;
   const relativeSslPath = relative(baseDir, absoluteSslPath);

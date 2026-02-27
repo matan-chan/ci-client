@@ -1,4 +1,4 @@
-import { EXIT_FAILURE } from "./constants";
+import { EXIT_FAILURE } from "../config/constants";
 import chalk from "chalk";
 
 export const handleCiError = (error: unknown): void => {

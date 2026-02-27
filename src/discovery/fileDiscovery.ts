@@ -1,9 +1,9 @@
-import { NGINX_CONFIG_PATTERNS, EXCLUDE_PATTERNS } from "./constants";
+import { NGINX_CONFIG_PATTERNS, EXCLUDE_PATTERNS } from "../config/constants";
 import { dirname, isAbsolute, join, resolve } from "path";
-import { readConfigFile } from "./utils/file";
-import { parseNginxConfig } from "./parser";
-import { logVerbose } from "./utils";
+import { readConfigFile } from "../utils/file";
+import { parseNginxConfig } from "../parser";
 import { existsSync, statSync } from "fs";
+import { logVerbose } from "../utils";
 import { glob } from "glob";
 import chalk from "chalk";
 
@@ -32,10 +32,7 @@ export type FindIndependentConfigTreesResult = {
   fileContents: Map<string, string>;
 };
 
-export const findIndependentConfigTrees = async (
-  directory: string,
-  options: { pattern?: string; verbose?: boolean }
-): Promise<FindIndependentConfigTreesResult> => {
+export const findIndependentConfigTrees = async (directory: string, options: { pattern?: string; verbose?: boolean }): Promise<FindIndependentConfigTreesResult> => {
   const allConfigFiles = await findNginxConfigs(directory, options);
   if (allConfigFiles.length === 0) return { trees: [], fileContents: new Map() };
   const { graph: dependencyGraph, fileContents } = await buildDependencyGraph(allConfigFiles);
@@ -49,11 +46,7 @@ export const findIndependentConfigTrees = async (
   return { trees, fileContents };
 };
 
-const extractIncludeDependenciesFromContent = (
-  content: string,
-  filePath: string,
-  allFiles: Set<string>
-): Set<string> => {
+const extractIncludeDependenciesFromContent = (content: string, filePath: string, allFiles: Set<string>): Set<string> => {
   const dependencies = new Set<string>();
   try {
     const ast = parseNginxConfig(content);
@@ -61,8 +54,7 @@ const extractIncludeDependenciesFromContent = (
     const includePaths = findIncludeDirectives(ast);
     for (const includePath of includePaths) {
       const resolvedPaths = resolveIncludePath(includePath, baseDir);
-      for (const resolvedPath of resolvedPaths)
-        if (allFiles.has(resolvedPath)) dependencies.add(resolvedPath);
+      for (const resolvedPath of resolvedPaths) if (allFiles.has(resolvedPath)) dependencies.add(resolvedPath);
     }
   } catch {
     // parsing failed, treat as no dependencies
@@ -70,9 +62,7 @@ const extractIncludeDependenciesFromContent = (
   return dependencies;
 };
 
-const buildDependencyGraph = async (
-  files: string[]
-): Promise<{ graph: Map<string, Set<string>>; fileContents: Map<string, string> }> => {
+const buildDependencyGraph = async (files: string[]): Promise<{ graph: Map<string, Set<string>>; fileContents: Map<string, string> }> => {
   const allFilesSet = new Set(files);
   const results = await Promise.all(
     files.map(async (filePath) => {
@@ -142,12 +132,7 @@ const findConnectedComponents = (allFiles: string[], dependencyGraph: Map<string
   return trees;
 };
 
-const findComponent = (
-  startFile: string,
-  graph: Map<string, Set<string>>,
-  reverseGraph: Map<string, Set<string>>,
-  visited: Set<string>
-): string[] => {
+const findComponent = (startFile: string, graph: Map<string, Set<string>>, reverseGraph: Map<string, Set<string>>, visited: Set<string>): string[] => {
   const component: string[] = [];
   const queue = [startFile];
   while (queue.length > 0) {
