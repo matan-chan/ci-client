@@ -1,0 +1,48 @@
+{
+  "name": "nginly-client",
+  "version": "0.1.0",
+  "description": "CI client: discover nginx configs and send to Nginly for analysis",
+  "type": "commonjs",
+  "main": "dist/index.cjs",
+  "bin": {
+    "nginly": "./dist/index.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "build": "tsup",
+    "build:binary": "bun build ./src/index.ts --compile --outfile nginx-analyze-ci",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "glob": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.8",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matan-chan/nginx-analyze-ci-client.git"
+  },
+  "keywords": [
+    "nginx",
+    "ci",
+    "analyzer",
+    "lint",
+    "github-actions"
+  ]
+}
